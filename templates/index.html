@@ -1,0 +1,38 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Excel File for PPP Generation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Excel File for PPP Generation</h1>
+
+    <!-- Display error messages if any -->
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form action="/generatePPP" method="post" enctype="multipart/form-data">
+        <input type="file" name="excel_file" accept=".xls,.xlsx" required><br><br>
+        <input type="submit" value="Generate PPP">
+    </form>
+
+    <!-- Display PPP report if generated -->
+    {% if ppp_report %}
+    <h2>PPP Report:</h2>
+    <div class="ppp-report">
+        {{ ppp_report | safe }}  {# Ensure ppp_report is rendered as HTML #}
+    </div>
+    {% endif %}
+
+</body>
+</html>
