@@ -9,7 +9,6 @@ app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')  # Folder to store uploaded files
 if not os.path.exists(UPLOAD_FOLDER):  # create directory for uploads if DNE
     os.makedirs(UPLOAD_FOLDER)
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
@@ -23,29 +22,37 @@ def index():
 @app.route('/generatePPP', methods=['POST'])
 def generate_ppp():
     try:
-        # Check if the post request has the file part
+        # no file upload in POST request
         if 'excel_file' not in request.files:
             return render_template('index_html', error='Include an Excel file to create a PPP')
 
-        file = request.files['excel_file']
+        file = request.files['excel_file']  # retrieve Excel file from POST request
+        sheet_name = request.form.get('sheet_name')  # retrieve text input from POST request
 
-        # If user does not select file, browser also submit an empty part without filename
+        # checking if uploaded file upload is empty
         if file.filename == '':
-            return render_template('index.html', error='No selected file')
+            return render_template('index.html', error='Select an Excel file to create a PPP')
 
+        # process uploaded file
         if file:
-            # Save the file to a secure location
+            # temporarily save the file to a secure location (uploads folder)
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
 
             # Generate PPP report
-            ppp_report = generatePPP.create_ppp(file_path)
+            if sheet_name:  # sheet name was provided
+                ppp_report = generatePPP.create_ppp(file_path, pg=sheet_name)
+            else:  # sheet name was not provided
+                ppp_report = generatePPP.create_ppp(file_path)
+
+            # remove file from secure location once PPP is generated
+            os.remove(file_path)
 
             # Render PPP report or pass it to a new template
             return render_template('index.html', ppp_report=ppp_report)
 
-    except Exception as e:
+    except Exception as e:  # error occurred
         return render_template('index.html', error=str(e))
 
 

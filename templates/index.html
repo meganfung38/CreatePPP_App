@@ -23,6 +23,8 @@
 
     <form action="/generatePPP" method="post" enctype="multipart/form-data">
         <input type="file" name="excel_file" accept=".xls,.xlsx" required><br><br>
+        <label for="sheet_name">Sheet name to access Excel file at (optional-- leave blank if there is no specific sheet name to access):</label>
+        <input type="text" id="sheet_name" name="sheet_name"><br><br>
         <input type="submit" value="Generate PPP">
     </form>
 
