@@ -1,5 +1,30 @@
 import pandas as pd
 from datetime import datetime, timedelta
+import openai
+
+
+# configuring openAI access
+# openai.api_key = 'include API key'
+client = openai.OpenAI()  # creating an OpenAI client instance
+
+
+def ask_openai(openai_client, system_prompt, user_prompt):
+    """calls openai"""
+    completion = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": user_prompt
+            }
+        ]
+    )
+    return completion.choices[0].message.content
 
 
 def format_task(target, og_target, corporate_initiative, name, dri, is_overdue=False):
@@ -97,7 +122,7 @@ def create_ppp(file_path, pg=None):
             for index, row in overdue.iterrows()
         ]
 
-        # formatting json response
+        # formatting PPP
         ppp = (
             "<b>Progress [Last Week]</b> <br><br>" +
             "<br>".join(f"- {task}" for task in progress_tasks) + "<br><br>" +
@@ -107,6 +132,22 @@ def create_ppp(file_path, pg=None):
             "<br>".join(f"- {task}" for task in problem_tasks) + "<br><br>"
         )
 
+        # setting up openai prompts
+        system_prompt = (
+            "A PPP covers three sections: \n"
+            "- Progress: tasks completed within the last week \n"
+            "- Plans: tasks to be completed within the next two months \n"
+            "- Problems: ongoing blocked tasks or tasks that are overdue \n"
+            "**Summarize the PPP report by: \n"
+            "- summarizing similar tasks into one task \n"
+            "- describing tasks at an executive level \n"
+            "**Maintain the current PP formatting. Only rephrase."
+        )
+        user_prompt = ppp
+
+        # print(ask_openai(client, system_prompt, user_prompt))
+
+        # calling openai
         return ppp
 
     except Exception as e:
