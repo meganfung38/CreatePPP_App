@@ -1,11 +1,11 @@
 import pandas as pd
 from datetime import datetime, timedelta
-import openai
+# import openai
 
 
 # configuring openAI access
 # openai.api_key = 'include API key'
-client = openai.OpenAI()  # creating an OpenAI client instance
+# client = openai.OpenAI()  # creating an OpenAI client instance
 
 
 def ask_openai(openai_client, system_prompt, user_prompt):
