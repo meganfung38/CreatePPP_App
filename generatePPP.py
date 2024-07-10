@@ -1,10 +1,9 @@
-import socket
-
 import pandas as pd
 from datetime import datetime, timedelta
+# import openai
+# import socket
 # import requests
 # from config import OPENAI_API_KEY
-# import openai
 #
 #
 # # debugging connection errors
