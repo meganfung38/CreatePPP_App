@@ -1,30 +1,68 @@
+import socket
+
 import pandas as pd
 from datetime import datetime, timedelta
-# import openai
+import requests
+from config import OPENAI_API_KEY
+import openai
+
+
+# debugging connection errors
+print(f"OpenAI library version: {openai.__version__}")
+print(f"API Key (first 5 chars): {OPENAI_API_KEY[:5]}...")
+try:
+    response = requests.get("https://api.openai.com/v1/engines",
+                            headers={"Authorization": f"Bearer {OPENAI_API_KEY}"})
+    print(f"OpenAI API response status: {response.status_code}")
+    print(f"OpenAI API response: {response.text[:100]}...")  # Print first 100 chars
+except requests.RequestException as e:
+    print(f"Error reaching OpenAI API: {e}")
 
 
 # configuring openAI access
-# openai.api_key = 'include API key'
-# client = openai.OpenAI()  # creating an OpenAI client instance
+openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI()  # creating an OpenAI client instance
 
 
 def ask_openai(openai_client, system_prompt, user_prompt):
     """calls openai"""
-    completion = openai_client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
-        ]
-    )
-    return completion.choices[0].message.content
+    try:
+        completion = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ]
+        )
+        return completion.choices[0].message.content
+    # debugging
+    except openai.APIConnectionError as e:
+        error_details = f"Connection error: {e}\n"
+        error_details += f"API Key (first 5 chars): {OPENAI_API_KEY[:5]}...\n"
+        try:
+            response = requests.get("https://api.openai.com/v1/engines", timeout=5)
+            error_details += f"OpenAI API reachable: {response.status_code == 200}\n"
+        except requests.RequestException as req_e:
+            error_details += f"Error reaching OpenAI API: {req_e}\n"
+        try:
+            socket.create_connection(("www.google.com", 80))
+            error_details += "Internet connection: Available\n"
+        except OSError:
+            error_details += "Internet connection: Not available\n"
+        return error_details
+    except openai.APIError as e:
+        return f"OpenAI API returned an API Error: {e}"
+    except openai.RateLimitError as e:
+        return f"OpenAI API request exceeded rate limit: {e}"
+    except Exception as e:
+        return f"Unexpected error: {e}"
 
 
 def format_task(target, og_target, corporate_initiative, name, dri, is_overdue=False):
@@ -145,10 +183,8 @@ def create_ppp(file_path, pg=None):
         )
         user_prompt = ppp
 
-        # print(ask_openai(client, system_prompt, user_prompt))
-
         # calling openai
-        return ppp
+        return ask_openai(client, system_prompt, user_prompt)
 
     except Exception as e:
         return str(e)
