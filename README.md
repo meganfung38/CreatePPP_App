@@ -26,7 +26,7 @@
         - macOS: source venv/bin/activate
      2. define openai.api_key in generatePPP.py
      3. set environment variable:
-        - windows: setx OPENAI_API_KEY "your-api-key-here" and run as you would locally
+        - windows: set OPENAI_API_KEY=<your api key (does not need to be enclosed in quotations)> and run as you would locally
         - macOS: export OPENAI_API_KEY='your_api_key_here' and run as you would locally
 
 
