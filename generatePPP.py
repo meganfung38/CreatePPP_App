@@ -1,89 +1,125 @@
 import pandas as pd
 from datetime import datetime, timedelta
-# import openai
-# import socket
-# import requests
-# from config import OPENAI_API_KEY
-#
-#
-# # debugging connection errors
-# print(f"OpenAI library version: {openai.__version__}")
-# print(f"API Key (first 5 chars): {OPENAI_API_KEY[:5]}...")
-# try:
-#     response = requests.get("https://api.openai.com/v1/engines",
-#                             headers={"Authorization": f"Bearer {OPENAI_API_KEY}"})
-#     print(f"OpenAI API response status: {response.status_code}")
-#     print(f"OpenAI API response: {response.text[:100]}...")  # Print first 100 chars
-# except requests.RequestException as e:
-#     print(f"Error reaching OpenAI API: {e}")
-#
-#
-# # configuring openAI access
-# openai.api_key = OPENAI_API_KEY
-# client = openai.OpenAI()  # creating an OpenAI client instance
-#
-#
-# def ask_openai(openai_client, system_prompt, user_prompt):
-#     """calls openai"""
-#     try:
-#         completion = openai_client.chat.completions.create(
-#             model="gpt-3.5-turbo",
-#             temperature=0,
-#             messages=[
-#                 {
-#                     "role": "system",
-#                     "content": system_prompt
-#                 },
-#                 {
-#                     "role": "user",
-#                     "content": user_prompt
-#                 }
-#             ]
-#         )
-#         return completion.choices[0].message.content
-#     # debugging
-#     except openai.APIConnectionError as e:
-#         error_details = f"Connection error: {e}\n"
-#         error_details += f"API Key (first 5 chars): {OPENAI_API_KEY[:5]}...\n"
-#         try:
-#             response = requests.get("https://api.openai.com/v1/engines", timeout=5)
-#             error_details += f"OpenAI API reachable: {response.status_code == 200}\n"
-#         except requests.RequestException as req_e:
-#             error_details += f"Error reaching OpenAI API: {req_e}\n"
-#         try:
-#             socket.create_connection(("www.google.com", 80))
-#             error_details += "Internet connection: Available\n"
-#         except OSError:
-#             error_details += "Internet connection: Not available\n"
-#         return error_details
-#     except openai.APIError as e:
-#         return f"OpenAI API returned an API Error: {e}"
-#     except openai.RateLimitError as e:
-#         return f"OpenAI API request exceeded rate limit: {e}"
-#     except Exception as e:
-#         return f"Unexpected error: {e}"
+import openai
+import requests
+from config import OPENAI_API_KEY
 
 
-def format_task(target, og_target, corporate_initiative, name, dri, is_overdue=False):
-    """formats the progress, plan, and overdue tasks"""
-    if is_overdue:  # task is overdue
-        overdue = "OVERDUE: "
-    else:
-        overdue = ""
-    bolded_initiative = f"<b>{corporate_initiative}</b>"
-    if og_target:  # if an original target date exists, include it
-        return f"{overdue}{target} ({og_target}) {bolded_initiative}: {name} [{dri}]"
-    else:
-        return f"{overdue}{target} {bolded_initiative}: {name} [{dri}]"
+# debugging connection errors
+print(f"OpenAI library version: {openai.__version__}")
+print(f"API Key (first 5 chars): {OPENAI_API_KEY[:5]}...")
+try:
+    response = requests.get("https://api.openai.com/v1/engines",
+                            headers={"Authorization": f"Bearer {OPENAI_API_KEY}"})
+    print(f"OpenAI API response status: {response.status_code}")
+    print(f"OpenAI API response: {response.text[:100]}...")  # Print first 100 chars
+except requests.RequestException as request_error:
+    print(f"Error reaching OpenAI API: {request_error}")
 
 
-def format_problem_task(name, comment):
-    """formats problem tasks"""
-    bolded_name = f"<b>{name}</b>"
-    if comment:  # comment for why problem task is blocked, exists
-        return f"{bolded_name}- {comment}"
-    else:
-        return f"{bolded_name}- no comments"
+# configuring openAI access
+openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI()  # creating an OpenAI client instance
+
+
+def ask_openai(openai_client, system_prompt, user_prompt):
+    """calls openai"""
+    try:
+        completion = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f"Here is the task information: {user_prompt}"
+                }
+            ]
+        )
+        return completion.choices[0].message.content
+    # debugging
+    except Exception as openai_error:
+        return f"Unexpected error: {openai_error}"
+
+
+def format_task(row, has_og_target_date, is_overdue=False):
+    """formats the progress, plan, and overdue tasks using AI"""
+    try:
+        if is_overdue:  # task is overdue
+            overdue = "OVERDUE: "
+        else:
+            overdue = ""
+        if has_og_target_date and pd.notna(row['Original Target Date']):  # task has an original target date to include
+            og_target_date = f"({row['Original Target Date'].strftime('%m/%d')}) "
+        else:
+            og_target_date = ""
+        target_date = row['Target Date'].strftime('%m/%d')
+
+        # setting AI prompts up
+        user_prompt = row.to_dict()
+        system_prompt = (
+            "You are an expert in summarizing and restructuring tasks.\n"
+            "Your purpose is to analyze the provided details for a task, and "
+            "extract critical information that is important and relevant for an executive summary.\n"
+            "NOTE: keep GOAL and NAME simple, concise, and easy to understand."
+            "1. Identify the executive business goal/objective/ corporate initiative this task addresses. "
+            "This field is called GOAL.\n"
+            "2. Name this task. This should briefly describe in summary what the task is specifically. "
+            "This field is called NAME.\n"
+            "3. Identify which individual(s) is in charge of driving/ completing this task. "
+            "This field is called ASSIGNEE.\n"
+            "4. FORMAT YOUR RESPONSE: format the fields identified in steps 1-3 in your response. Use this syntax:\n"
+            "<b>{GOAL}</b>: {NAME} [{ASSIGNEE}]\n"
+            "NOTE: fields are enclosed in curly brackets {}. "
+            "Replace the fields enclosed in curly brackets with the information you've identified.\n"
+            "\n"
+            "Here is an example of how a task should be formatted in your response: \n"
+            "<b>Internship Training Program: Give all interns access to Mission Control trainings [Program Lead]\n"
+        )
+
+        # asking AI
+        task = ask_openai(client, system_prompt, user_prompt)
+        print(task)
+
+        return f"{overdue}{target_date} {og_target_date}{task}"
+
+    except Exception as formatting_error:
+        return f"Error formatting task: {formatting_error}"
+
+
+def format_problem_task(row, has_comments):
+    """formats problem tasks using AI"""
+    try:
+        if has_comments and pd.notna(row['Comments']):
+            comments = f"{row['Comments']}"
+        else:
+            comments = "no comments"
+
+        # setting AI prompts up
+        user_prompt = row.to_dict()
+        system_prompt = (
+            "You are an expert in summarizing tasks.\n"
+            "Your purpose is to analyze the provided details for a task, and "
+            "extract critical information that is important and relevant for an executive summary.\n"
+            "NOTE: keep the NAME simple, concise, and easy to understand.\n"
+            "1. Name this task. This should briefly describe in summary what the task is specifically.\n"
+            "This field is called NAME"
+            "2. FORMAT YOUR RESPONSE: only include the NAME field identified in step 1 in your response.\n"
+            "Here is an example of how a task should be formatted in your response: \n"
+            "Give all interns access to Mission Control trainings\n"
+        )
+
+        # asking AI
+        task = ask_openai(client, system_prompt, user_prompt)
+        print(task)
+
+        return f"<b>{task}</b>- {comments}"
+
+    except Exception as formatting_problem_error:
+        return f"Error formatting problem task: {formatting_problem_error}"
 
 
 def create_ppp(file_path, pg=None):
@@ -127,35 +163,18 @@ def create_ppp(file_path, pg=None):
 
         # formatting tasks for PPP
         progress_tasks = [
-            format_task(row['Complete Date'].strftime('%m/%d'),
-                        row['Target Date'].strftime('%m/%d') if pd.notna(row['Target Date']) else None,
-                        row['Corporate Initiative'],
-                        row['Project Name'],
-                        row['Project DRI'])
+            format_task(row, has_og_target_date)
             for index, row in progress.iterrows()
         ]
         plan_tasks = [
-            format_task(row['Target Date'].strftime('%m/%d'),
-                        row['Original Target Date'].strftime('%m/%d')
-                        if has_og_target_date and pd.notna(row['Original Target Date']) else None,
-                        row['Corporate Initiative'],
-                        row['Project Name'],
-                        row['Project DRI'])
+            format_task(row, has_og_target_date)
             for index, row in plan.iterrows()
         ]
         problem_tasks = [
-            format_problem_task(row['Project Name'],
-                                row['Comments']
-                                if has_comments and pd.notna(row['Comments']) else None)
+            format_problem_task(row, has_comments)
             for index, row in blocked.iterrows()
         ] + [
-            format_task(row['Target Date'].strftime('%m/%d'),
-                        row['Original Target Date'].strftime('%m/%d')
-                        if has_og_target_date and pd.notna(row['Original Target Date']) else None,
-                        row['Corporate Initiative'],
-                        row['Project Name'],
-                        row['Project DRI'],
-                        is_overdue=True)
+            format_task(row, has_og_target_date, is_overdue=True)
             for index, row in overdue.iterrows()
         ]
 
@@ -165,26 +184,12 @@ def create_ppp(file_path, pg=None):
             "<br>".join(f"- {task}" for task in progress_tasks) + "<br><br>" +
             "<b>Plans [Next Two Months]</b> <br><br>" +
             "<br>".join(f"- {task}" for task in plan_tasks) + "<br><br>" +
-            "<b>Progress [Ongoing]</b> <br><br>" +
+            "<b>Problems [Ongoing]</b> <br><br>" +
             "<br>".join(f"- {task}" for task in problem_tasks) + "<br><br>"
         )
-
-        # setting up openai prompts
-        system_prompt = (
-            "A PPP covers three sections: \n"
-            "- Progress: tasks completed within the last week \n"
-            "- Plans: tasks to be completed within the next two months \n"
-            "- Problems: ongoing blocked tasks or tasks that are overdue \n"
-            "**Summarize the PPP report by: \n"
-            "- summarizing similar tasks into one task \n"
-            "- describing tasks at an executive level \n"
-            "**Maintain the current PP formatting. Only rephrase."
-        )
-        user_prompt = ppp
 
         # calling openai
         return ppp
 
-    except Exception as e:
-        return str(e)
-    
+    except Exception as ppp_error:
+        return str(ppp_error)
