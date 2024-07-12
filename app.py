@@ -42,15 +42,18 @@ def generate_ppp():
 
             # Generate PPP report
             if sheet_name:  # sheet name was provided
-                ppp_report = generatePPP.create_ppp(file_path, pg=sheet_name)
+                progress_output, plans_output, problems_output = generatePPP.create_ppp(file_path, pg=sheet_name)
             else:  # sheet name was not provided
-                ppp_report = generatePPP.create_ppp(file_path)
+                progress_output, plans_output, problems_output = generatePPP.create_ppp(file_path)
 
             # remove file from secure location once PPP is generated
             os.remove(file_path)
 
             # Render PPP report or pass it to a new template
-            return render_template('index.html', ppp_report=ppp_report)
+            return render_template('index.html',
+                                   progress_output=progress_output,
+                                   plans_output=plans_output,
+                                   problems_output=problems_output)
 
     except Exception as e:  # error occurred
         return render_template('index.html', error=str(e))

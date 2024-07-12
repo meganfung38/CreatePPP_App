@@ -1,40 +1,124 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload Excel File for PPP Generation</title>
+    <title>Create An Executive PPP Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Montserrat', Arial, sans-serif;
         }
         .bold {
+            font-weight: bold;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-group label,
+        .form-group input[type="submit"],
+        .form-group input[type="file"],
+        .form-group input[type="text"] {
+            font-size: 13px; /* Adjust the font size as needed */
+            color: #002855; /* Dark blue for text input and buttons */
+        }
+        .form-group label {
+            margin: 0 10px 0 0;
+        }
+        .form-group input[type="submit"] {
+            background-color: #002855; /* Dark blue background for submit button */
+            color: white; /* White text for submit button */
+            border: none; /* Remove default border for submit button */
+            padding: 5px 10px; /* Padding for submit button */
+        }
+        .form-group input[type="submit"]:hover {
+            background-color: #001a40; /* Darker blue on hover */
+        }
+        h1 {
+            color: #002855; /* Dark blue for the title */
+        }
+        .ppp-section {
+            color: #002855; /* Dark blue for output text */
+        }
+        .date {
+            background-color: #BEE1F0; /* Tropical blue highlight for date in output text */
+        }
+        .og-date {
+            color: #6F6F6F; /* Smokey Grey for og date in output text */
+        }
+        .red-text {
+            color: red; /* for overdue or blocked tasks */
+        }
+        .ppp-section h2 {
+            margin-top: 20px;
+        }
+        .title {
+            color: #FF7A00; /* Orange for titles */
+        }
+        .subtitle {
+            color: #0684BC; /* Blue for subtitles */
+        }
+        .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            max-width: 200px; /* Maximum width for the image */
+            max-height: 200px; /* Maximum height for the image */
+            width: auto;
+            height: auto;
+        }
+        #loading {
+            display: none;
+            color: #002855; /* Ocean loading */
+            background-color: #C8C2B4; /* Ash highlight loading */
+            margin-top: 20px;
+            font-size: 13px;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>Upload Excel File for PPP Generation</h1>
+    <img src="{{ url_for('static', filename='ringcentral-logo.png') }}" alt="RingCentral Logo" class="bottom-right">
+
+    <h1>Create An Executive PPP Report</h1>
 
     <!-- Display error messages if any -->
     {% if error %}
     <p style="color: red;">{{ error }}</p>
     {% endif %}
 
-    <form action="/generatePPP" method="post" enctype="multipart/form-data">
-        <input type="file" name="excel_file" accept=".xls,.xlsx" required><br><br>
-        <label for="sheet_name">Sheet name to access Excel file at (optional-- leave blank if there is no specific sheet name to access):</label>
-        <input type="text" id="sheet_name" name="sheet_name"><br><br>
+    <form id="ppp-form" action="/generatePPP" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="excel_file" accept=".xls,.xlsx" required>
+            <label for="sheet_name">Sheet name (optional):</label>
+            <input type="text" id="sheet_name" name="sheet_name">
+        </div>
+        <br><br>
         <input type="submit" value="Generate PPP">
     </form>
 
+    <!-- Loading message -->
+    <div id="loading">Generating PPP...</div>
+
     <!-- Display PPP report if generated -->
-    {% if ppp_report %}
-    <h2>PPP Report:</h2>
+    {% if progress_output or plans_output or problems_output %}
     <div class="ppp-report">
-        {{ ppp_report | safe }}  {# Ensure ppp_report is rendered as HTML #}
+        <h2><span class="title bold">Progress</span> <span class="subtitle bold">[Last Week]</span></h2>
+        <div class="ppp-section">{{ progress_output | safe }}</div>
+
+        <h2><span class="title bold">Plans</span> <span class="subtitle bold">[Next Two Months]</span></h2>
+        <div class="ppp-section">{{ plans_output | safe }}</div>
+
+        <h2><span class="title bold">Problems</span> <span class="subtitle bold">[Ongoing]</span></h2>
+        <div class="ppp-section">{{ problems_output | safe }}</div>
     </div>
     {% endif %}
 
+    <script>
+        document.getElementById('ppp-form').addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+        });
+    </script>
 </body>
 </html>

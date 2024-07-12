@@ -45,18 +45,25 @@ def ask_openai(openai_client, system_prompt, user_prompt):
         return f"Unexpected error: {openai_error}"
 
 
-def format_task(row, has_og_target_date, is_overdue=False):
+def format_task(row, has_og_target_date, has_comments, is_blocked=False, is_overdue=False):
     """formats the progress, plan, and overdue tasks using AI"""
     try:
-        if is_overdue:  # task is overdue
-            overdue = "OVERDUE: "
-        else:
-            overdue = ""
+        target_date = row['Target Date'].strftime('%-m/%-d')
         if has_og_target_date and pd.notna(row['Original Target Date']):  # task has an original target date to include
-            og_target_date = f"({row['Original Target Date'].strftime('%m/%d')}) "
+            og_target_date = f"<span class='og-date'>({row['Original Target Date'].strftime('%-m/%-d')})</span> "
         else:
             og_target_date = ""
-        target_date = row['Target Date'].strftime('%m/%d')
+        if is_blocked:  # task is blocked
+            if has_comments and pd.notna(row['Comments']):
+                blocked = f"<span class='red-text'>({row['Comments']})</span> "
+            else:
+                blocked = "<span class='red-text'>(blocked)</span> "
+        else:
+            blocked = ""
+        if is_overdue:  # task is overdue
+            overdue = "<span class='red-text'>(overdue)</span>"
+        else:
+            overdue = ""
 
         # setting AI prompts up
         user_prompt = row.to_dict()
@@ -84,42 +91,10 @@ def format_task(row, has_og_target_date, is_overdue=False):
         task = ask_openai(client, system_prompt, user_prompt)
         print(task)
 
-        return f"{overdue}{target_date} {og_target_date}{task}"
+        return f"<span class='date'>{target_date}</span> {og_target_date}{task} {blocked}{overdue}"
 
     except Exception as formatting_error:
         return f"Error formatting task: {formatting_error}"
-
-
-def format_problem_task(row, has_comments):
-    """formats problem tasks using AI"""
-    try:
-        if has_comments and pd.notna(row['Comments']):
-            comments = f"{row['Comments']}"
-        else:
-            comments = "no comments"
-
-        # setting AI prompts up
-        user_prompt = row.to_dict()
-        system_prompt = (
-            "You are an expert in summarizing tasks.\n"
-            "Your purpose is to analyze the provided details for a task, and "
-            "extract critical information that is important and relevant for an executive summary.\n"
-            "NOTE: keep the NAME simple, concise, and easy to understand.\n"
-            "1. Name this task. This should briefly describe in summary what the task is specifically.\n"
-            "This field is called NAME"
-            "2. FORMAT YOUR RESPONSE: only include the NAME field identified in step 1 in your response.\n"
-            "Here is an example of how a task should be formatted in your response: \n"
-            "Give all interns access to Mission Control trainings\n"
-        )
-
-        # asking AI
-        task = ask_openai(client, system_prompt, user_prompt)
-        print(task)
-
-        return f"<b>{task}</b>- {comments}"
-
-    except Exception as formatting_problem_error:
-        return f"Error formatting problem task: {formatting_problem_error}"
 
 
 def create_ppp(file_path, pg=None):
@@ -163,33 +138,30 @@ def create_ppp(file_path, pg=None):
 
         # formatting tasks for PPP
         progress_tasks = [
-            format_task(row, has_og_target_date)
+            format_task(row, has_og_target_date, has_comments)
             for index, row in progress.iterrows()
         ]
         plan_tasks = [
-            format_task(row, has_og_target_date)
+            format_task(row, has_og_target_date, has_comments)
             for index, row in plan.iterrows()
         ]
         problem_tasks = [
-            format_problem_task(row, has_comments)
+            format_task(row, has_og_target_date, has_comments, is_blocked=True)
             for index, row in blocked.iterrows()
         ] + [
-            format_task(row, has_og_target_date, is_overdue=True)
+            format_task(row, has_og_target_date, has_comments, is_overdue=True)
             for index, row in overdue.iterrows()
         ]
 
         # formatting PPP
-        ppp = (
-            "<b>Progress [Last Week]</b> <br><br>" +
-            "<br>".join(f"- {task}" for task in progress_tasks) + "<br><br>" +
-            "<b>Plans [Next Two Months]</b> <br><br>" +
-            "<br>".join(f"- {task}" for task in plan_tasks) + "<br><br>" +
-            "<b>Problems [Ongoing]</b> <br><br>" +
-            "<br>".join(f"- {task}" for task in problem_tasks) + "<br><br>"
-        )
+        progress_output = "<br>".join(f"  •  {task}" for task in progress_tasks) + "<br><br>"
+        plans_output = "<br>".join(f"  • {task}" for task in plan_tasks) + "<br><br>"
+        problems_output = "<br>".join(f"  • {task}" for task in problem_tasks) + "<br><br>"
+
+        print(problems_output)
 
         # calling openai
-        return ppp
+        return progress_output, plans_output, problems_output
 
     except Exception as ppp_error:
         return str(ppp_error)
