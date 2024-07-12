@@ -91,7 +91,7 @@ def format_task(row, has_og_target_date, has_comments, is_blocked=False, is_over
         task = ask_openai(client, system_prompt, user_prompt)
         print(task)
 
-        return f"<span class='date'>{target_date}</span> {og_target_date}{task} {blocked}{overdue}"
+        return f"<span class='date'>{target_date}</span> {og_target_date}{task} {blocked}{overdue}", row['Target Date']
 
     except Exception as formatting_error:
         return f"Error formatting task: {formatting_error}"
@@ -125,38 +125,37 @@ def create_ppp(file_path, pg=None):
         # problems -- blocked or overdue
 
         progress_section = df[(df['Complete Date'] >= last_week) & (df['Complete Date'] <= today)]
-        plan_section = df[((df['Status'] != 'Completed') & (df['Status'] != 'Canceled')) &
+        plan_section = df[((df['Status'] != 'Completed') & (df['Status'] != 'Canceled') & (df['Status'] != 'Blocked')) &
                           ((df['Target Date'] > today) & (df['Target Date'] <= two_months))]
         blocked_section = df[df['Status'] == 'Blocked']
         overdue_section = df[(df['Target Date'] <= today) * (df['Status'] != 'Completed')]
 
-        # sorting tasks by completion date or target date
-        progress = progress_section.sort_values(by='Complete Date')
-        plan = plan_section.sort_values(by='Target Date')
-        blocked = blocked_section.sort_values(by='Target Date')
-        overdue = overdue_section.sort_values(by='Target Date')
-
         # formatting tasks for PPP
         progress_tasks = [
             format_task(row, has_og_target_date, has_comments)
-            for index, row in progress.iterrows()
+            for index, row in progress_section.iterrows()
         ]
         plan_tasks = [
             format_task(row, has_og_target_date, has_comments)
-            for index, row in plan.iterrows()
+            for index, row in plan_section.iterrows()
         ]
         problem_tasks = [
             format_task(row, has_og_target_date, has_comments, is_blocked=True)
-            for index, row in blocked.iterrows()
+            for index, row in blocked_section.iterrows()
         ] + [
             format_task(row, has_og_target_date, has_comments, is_overdue=True)
-            for index, row in overdue.iterrows()
+            for index, row in overdue_section.iterrows()
         ]
 
+        # sorting tasks for each section by target date
+        progress = sorted(progress_tasks, key=lambda target_date: target_date[1])
+        plan = sorted(plan_tasks, key=lambda target_date: target_date[1])
+        problems = sorted(problem_tasks, key=lambda target_date: target_date[1])
+
         # formatting PPP
-        progress_output = "<br>".join(f"  •  {task}" for task in progress_tasks) + "<br><br>"
-        plans_output = "<br>".join(f"  • {task}" for task in plan_tasks) + "<br><br>"
-        problems_output = "<br>".join(f"  • {task}" for task in problem_tasks) + "<br><br>"
+        progress_output = "<br>".join(f"  •  {task[0]}" for task in progress) + "<br><br>"
+        plans_output = "<br>".join(f"  • {task[0]}" for task in plan) + "<br><br>"
+        problems_output = "<br>".join(f"  • {task[0]}" for task in problems) + "<br><br>"
 
         print(problems_output)
 
