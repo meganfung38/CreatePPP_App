@@ -7,6 +7,7 @@
     <style>
         body {
             font-family: 'Montserrat', Arial, sans-serif;
+            padding-top: 50px;
         }
         .bold {
             font-weight: bold;
@@ -37,6 +38,8 @@
         }
         h1 {
             color: #002855; /* Dark blue for the title */
+            margin-top: 0;
+
         }
         .ppp-section {
             color: #002855; /* Dark blue for output text */
@@ -59,14 +62,15 @@
         .subtitle {
             color: #0684BC; /* Blue for subtitles */
         }
-        .bottom-right {
+        .top-left {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            top: 10px;
+            left: 10px;
             max-width: 200px; /* Maximum width for the image */
             max-height: 200px; /* Maximum height for the image */
             width: auto;
             height: auto;
+            margin-bottom: 20px;
         }
         #loading {
             display: none;
@@ -79,7 +83,7 @@
     </style>
 </head>
 <body>
-    <img src="{{ url_for('static', filename='ringcentral-logo.png') }}" alt="RingCentral Logo" class="bottom-right">
+    <img src="{{ url_for('static', filename='ringcentral-logo.png') }}" alt="RingCentral Logo" class="top-left">
 
     <h1>Create An Executive PPP Report</h1>
 
