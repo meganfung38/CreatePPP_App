@@ -110,27 +110,43 @@ def format_task(row, has_og_target_date, has_comments, is_blocked=False, is_over
         return f"Error formatting task: {formatting_error}"
 
 
+def to_datetime(timeline):
+    """returns the latest date in a cell as a datetime"""
+    # check if cell is empty
+    if pd.isna(timeline) or timeline.strip() == "":
+        return pd.NaT  # skip empty or NaN cells
+    dates = [date.strip() for date in timeline.split(',')]  # get list of dates in cell
+    converted_dates = pd.to_datetime(dates, errors='coerce')  # convert to datetime
+    return converted_dates.max()  # get the latest date
+
+
 def create_ppp(file_path, pg=None):
     """takes a file path and a page to an Excel sheet (provided optionally)
     and generates a PPP for it"""
     try:
+        # open file and skip first four rows:
+        # - row 1: '24Q3 Review Portfolio'-- board name
+        # - row 2: 'A high level overview of all your upcoming, current and completed projects.'-- board description
+        # - row 3: blank spacer
+        # - row 4: 'Committed'-- data frame is sorted by column 'Status'
         if pg:  # page to Excel sheet provided
-            df = pd.read_excel(file_path, sheet_name=pg)
+            df = pd.read_excel(file_path, sheet_name=pg, skiprows=4)
         else:  # no page to Excel sheet provided
-            df = pd.read_excel(file_path)
+            df = pd.read_excel(file_path, skiprows=4)
+
+        # checking for required columns for PPP report
+        required = ['Status', 'Timeline']
+        missing_columns = [col for col in required if col not in df.columns]
+        if missing_columns:  # missing columns
+            raise Exception(f"Missing required columns: {', '.join(missing_columns)}")
 
         # Filter rows that aren't project tasks
-        df = df[~df['Name'].isna() & (df['Name'].str.strip() != '') & (df['Name'].str.strip() != 'Subitems')]
-
-        # converting dates to datetime
-        def to_datetime(timeline):
-            """returns the latest date in a cell as a datetime"""
-            # check if cell is empty
-            if pd.isna(timeline) or timeline.strip() == "":
-                return pd.NaT  # skip empty or NaN cells
-            dates = [date.strip() for date in timeline.split(',')]  # get list of dates in cell
-            converted_dates = pd.to_datetime(dates, errors='coerce')  # convert to datetime
-            return converted_dates.max()  # get the latest date
+        df = df[~df['Name'].isna() &
+                (df['Name'].str.strip() != '') &
+                (df['Name'].str.strip() != 'Subitems') &
+                (df['Name'].str.strip() != 'Name') &
+                (df['Name'].str.strip() != 'Review') &
+                (df['Name'].str.strip() != 'Closed')]
 
         df['Timeline'] = df['Timeline'].apply(to_datetime)  # find latest date in timeline column
 
@@ -212,4 +228,5 @@ def create_ppp(file_path, pg=None):
         return progress_output, plans_output, problems_output
 
     except Exception as ppp_error:
+        print(f"Error: {ppp_error}")
         return str(ppp_error)
