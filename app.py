@@ -1,5 +1,5 @@
 import os
-import generatePPP
+import mondayPPP
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 
@@ -42,9 +42,9 @@ def generate_ppp():
 
             # Generate PPP report
             if sheet_name:  # sheet name was provided
-                progress_output, plans_output, problems_output = generatePPP.create_ppp(file_path, pg=sheet_name)
+                progress_output, plans_output, problems_output = mondayPPP.create_ppp(file_path, pg=sheet_name)
             else:  # sheet name was not provided
-                progress_output, plans_output, problems_output = generatePPP.create_ppp(file_path)
+                progress_output, plans_output, problems_output = mondayPPP.create_ppp(file_path)
 
             # remove file from secure location once PPP is generated
             os.remove(file_path)
