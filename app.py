@@ -2,8 +2,11 @@ import os
 import mondayPPP
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)  # handle cors issues
 
 # Configuration for file uploads
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')  # Folder to store uploaded files
