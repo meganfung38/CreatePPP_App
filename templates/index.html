@@ -12,74 +12,85 @@
         .bold {
             font-weight: bold;
         }
+        .form-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: space-between;
+        }
         .form-group {
             display: flex;
             align-items: center;
             gap: 10px;
+            flex: 1;
         }
         .form-group label,
-        .form-group input[type="submit"],
         .form-group input[type="file"],
-        .form-group input[type="text"] {
-            font-size: 13px; /* Adjust the font size as needed */
-            color: #002855; /* Dark blue for text input and buttons */
+        .form-group input[type="text"],
+        .form-group select {
+            font-size: 13px;
+            color: #002855;
+            font-family: 'Montserrat', Arial, sans-serif;
         }
         .form-group label {
             margin: 0 10px 0 0;
         }
-        .form-group input[type="submit"] {
-            background-color: #002855; /* Dark blue background for submit button */
-            color: white; /* White text for submit button */
-            border: none; /* Remove default border for submit button */
-            padding: 5px 10px; /* Padding for submit button */
+        .submit-button {
+            background-color: #002855;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Montserrat', Arial, sans-serif;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 10px;
         }
-        .form-group input[type="submit"]:hover {
-            background-color: #001a40; /* Darker blue on hover */
+        .submit-button:hover {
+            background-color: #001a40;
         }
         h1 {
             font-size: 30px;
-            color: #002855; /* Dark blue for the title */
+            color: #002855;
             margin-top: 0;
-
         }
         .ppp-section {
-            color: #002855; /* Dark blue for output text */
+            color: #002855;
         }
         .date {
-            background-color: #BEE1F0; /* Tropical blue highlight for date in output text */
+            background-color: #BEE1F0;
         }
         .og-date {
-            color: #6F6F6F; /* Smokey Grey for og date in output text */
+            color: #6F6F6F;
         }
         .red-text {
-            color: red; /* for overdue or blocked tasks */
+            color: red;
         }
         .assignee {
-            background-color: #F1EFEC; /* Soft peach highlight for assignees */
+            background-color: #F1EFEC;
         }
         .ppp-section h2 {
             margin-top: 20px;
         }
         .title {
-            color: #FF7A00; /* Orange for titles */
+            color: #FF7A00;
         }
         .subtitle {
-            color: #0684BC; /* Blue for subtitles */
+            color: #0684BC;
         }
         .top-left {
             position: absolute;
             top: 10px;
             left: 10px;
-            max-width: 170px; /* Maximum width for the image */
-            max-height: 170px; /* Maximum height for the image */
+            max-width: 170px;
+            max-height: 170px;
             width: auto;
             height: auto;
             margin-bottom: 20px;
         }
         #loading {
             display: none;
-            color: #002855; /* Ocean loading */
-            background-color: #C8C2B4; /* Ash highlight loading */
+            color: #002855;
+            background-color: #C8C2B4;
             margin-top: 20px;
             font-size: 13px;
             font-weight: bold;
@@ -97,13 +108,26 @@
     {% endif %}
 
     <form id="ppp-form" action="/generatePPP" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <input type="file" name="excel_file" accept=".xls,.xlsx" required>
-            <label for="sheet_name">Sheet name (optional):</label>
-            <input type="text" id="sheet_name" name="sheet_name">
+        <div class="form-container">
+            <div class="form-group">
+                <input type="file" name="excel_file" accept=".xls,.xlsx" required>
+            </div>
+            <div class="form-group">
+                <label for="audience">Audience:</label>
+                <select id="audience" name="audience" required>
+                    <option value="Everyone">Everyone</option>
+                    <option value="Natalie">Natalie</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="sheet_name">Sheet name (optional):</label>
+                <input type="text" id="sheet_name" name="sheet_name">
+            </div>
         </div>
         <br><br>
-        <input type="submit" value="Generate PPP">
+        <div class="form-group">
+            <input type="submit" value="Generate PPP" class="submit-button">
+        </div>
     </form>
 
     <!-- Loading message -->

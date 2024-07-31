@@ -120,7 +120,7 @@ def to_datetime(timeline):
     return converted_dates.max()  # get the latest date
 
 
-def create_ppp(file_path, pg=None):
+def create_ppp(file_path, audience, pg=None):
     """takes a file path and a page to an Excel sheet (provided optionally)
     and generates a PPP for it"""
     try:
@@ -135,7 +135,7 @@ def create_ppp(file_path, pg=None):
             df = pd.read_excel(file_path, skiprows=4)
 
         # checking for required columns for PPP report
-        required = ['Status', 'Timeline', 'Completed Date']
+        required = ['Status', 'Timeline', 'Completed Date', 'Audience']
         missing_columns = [col for col in required if col not in df.columns]
         if missing_columns:  # missing columns
             raise Exception(f"Missing required columns: {', '.join(missing_columns)}")
@@ -147,6 +147,9 @@ def create_ppp(file_path, pg=None):
                 (df['Name'].str.strip() != 'Name') &
                 (df['Name'].str.strip() != 'Review') &
                 (df['Name'].str.strip() != 'Closed')]
+
+        if audience != 'Everyone':  # if there is a specified audience
+            df = df[df['Audience'].str.strip() == audience]
 
         df['Timeline'] = df['Timeline'].apply(to_datetime)  # find latest date in timeline column
         df['Completed Date'] = pd.to_datetime(df['Completed Date'], format='%m/%d/%Y', errors='coerce')  # convert

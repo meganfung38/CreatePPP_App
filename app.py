@@ -30,11 +30,16 @@ def generate_ppp():
             return render_template('index_html', error='Include an Excel file to create a PPP')
 
         file = request.files['excel_file']  # retrieve Excel file from POST request
+        audience = request.form.get('audience')  # retrieve selected dropdown value from POST request
         sheet_name = request.form.get('sheet_name')  # retrieve text input from POST request
 
         # checking if uploaded file upload is empty
         if file.filename == '':
             return render_template('index.html', error='Select an Excel file to create a PPP')
+
+        # checking if audience is selected
+        if not audience:
+            return render_template('index.html', error='Select an audience for your PPP')
 
         # process uploaded file
         if file:
@@ -45,9 +50,12 @@ def generate_ppp():
 
             # Generate PPP report
             if sheet_name:  # sheet name was provided
-                progress_output, plans_output, problems_output = mondayPPP.create_ppp(file_path, pg=sheet_name)
+                progress_output, plans_output, problems_output = mondayPPP.create_ppp(file_path,
+                                                                                      audience=audience,
+                                                                                      pg=sheet_name)
             else:  # sheet name was not provided
-                progress_output, plans_output, problems_output = mondayPPP.create_ppp(file_path)
+                progress_output, plans_output, problems_output = mondayPPP.create_ppp(file_path,
+                                                                                      audience=audience)
 
             # remove file from secure location once PPP is generated
             os.remove(file_path)
