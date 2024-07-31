@@ -135,7 +135,7 @@ def create_ppp(file_path, pg=None):
             df = pd.read_excel(file_path, skiprows=4)
 
         # checking for required columns for PPP report
-        required = ['Status', 'Timeline']
+        required = ['Status', 'Timeline', 'Completed Date']
         missing_columns = [col for col in required if col not in df.columns]
         if missing_columns:  # missing columns
             raise Exception(f"Missing required columns: {', '.join(missing_columns)}")
@@ -149,20 +149,26 @@ def create_ppp(file_path, pg=None):
                 (df['Name'].str.strip() != 'Closed')]
 
         df['Timeline'] = df['Timeline'].apply(to_datetime)  # find latest date in timeline column
+        df['Completed Date'] = pd.to_datetime(df['Completed Date'], format='%m/%d/%Y', errors='coerce')  # convert
 
         # get range of dates for progress and plan sections
-        today = datetime.now()  # today's date
+        today = datetime.now().date()  # today's date
         last_week = today - timedelta(days=7)  # 7 days ago
         two_months = today + timedelta(days=60)  # 60 days from now
 
+        # convert dates without time component
+        today = datetime.combine(today, datetime.min.time())
+        last_week = datetime.combine(last_week, datetime.min.time())
+        two_months = datetime.combine(two_months, datetime.min.time())
+
         # getting tasks for each section
-        # progress -- ‘Completed’ (target date is within last week - next two months)
+        # progress -- ‘Completed’ (target date is within last week)
         # plan -- ‘Working’, ‘Committed’, ‘Completed - Partial’ (target date is in next two months)
         # problems -- 'Blocked' or overdue
 
-        progress_section = df[(df['Timeline'] >= last_week) &
-                              (df['Timeline'] <= two_months) &
-                              (df['Status'] == 'Completed')]
+        progress_section = df[(df['Status'] == 'Completed') &
+                              (df['Completed Date'] >= last_week) &
+                              (df['Completed Date'] <= today)]
         plan_section = df[((df['Status'] == 'Working') |
                           (df['Status'] == 'Committed') |
                           (df['Status'] == 'Completed - Partial')) &
