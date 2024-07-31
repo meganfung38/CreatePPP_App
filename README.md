@@ -2,16 +2,13 @@
 
 - rows: represent tasks
 - required columns:
-- Complete Date (MM/DD)
-- Target Date (MM//DD)
-- Status (marked one of the following: Completed, New, Working, Canceled, Blocked)
-- Corporate Initiative
-- Project Name
-- Project DRI
+- Status-- Blocked, Working, Committed, Soft Commit, Completed - Partial, Completed, Deprioritzed, Canceled, or Review
+- Timeline-- target dates for subitems of the project
+- Name-- task/ project name
 
 **Output: Creates an executive PPP**
 
-- Progress: tasks completed within the last week
+- Progress: tasks completed with a target date within the last week - next two months
 - Plan: tasks planned for the next two months
 - Problems: tasks that are blocked or are overdue
 
@@ -24,8 +21,7 @@
      1. must activate virtual environment:
         - windows: venv\Scripts\activate
         - macOS: source venv/bin/activate
-     2. define openai.api_key in generatePPP.py
-     3. set environment variable:
+     2. set environment variable:
         - windows: set OPENAI_API_KEY=<your api key (does not need to be enclosed in quotations)> and run as you would locally
         - macOS: export OPENAI_API_KEY='your_api_key_here' and run as you would locally
 
