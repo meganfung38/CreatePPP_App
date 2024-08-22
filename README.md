@@ -19,7 +19,7 @@
 - traverses through tasks
 - performs necessary filtering to distribute tasks to their respective sections of the PPP
 - uses openai to to summarize tasks and their subitems
-    - formatting: <target date> <task title>: <task summmary> [<assignee>]
+    - formatting: |target date| |task title|: |task summmary| [|assignee|]
 
 **Additional Instructions**
 
